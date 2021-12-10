@@ -1,0 +1,526 @@
+---
+- name: Expert cheking git-repository
+  hosts: localhost
+  become: yes
+  gather_facts: no
+  tasks:
+          - name: ==========================Checking that the Git repository is cloned==========================
+            stat:
+                    path: /wsr-skillcloud
+            register: file_git_repository
+
+          - debug:
+                  msg: "SUCCESS"
+            when: file_git_repository.stat.exists
+
+          - debug:
+                  msg: "NO SUCCESS"
+            when: file_git_repository.stat.exists == False
+
+          - name: ==========================Connection VM==========================
+            shell: "ansible all -m ping "
+            register: conn_vm
+
+          - debug: var=conn_vm.stdout_lines
+
+- name: Expert Ansible tasks
+  hosts: all
+  become: yes
+  gather_facts: no
+  tasks:
+          - name: ==========================Checking that the curl package is installed==========================
+            package_facts:
+                   manager: "auto"
+
+          - debug:
+                  msg: "SUCCESS"
+            when: "'curl' in ansible_facts.packages"
+
+          - debug:
+                 msg: "NO SUCCESS"
+            when: "'curl' not in ansible_facts.packages"
+
+          - name: ==========================Checking that the docker package is installed==========================
+            package_facts:
+                   manager: "auto"
+
+          - debug:
+                  msg: "SUCCESS"
+            when: "'docker-ce' in ansible_facts.packages"
+
+          - debug:
+                 msg: "NO SUCCESS"
+            when: "'docker-ce' not in ansible_facts.packages"
+
+          - name: ==========================Checking that ufw is activated==========================
+            shell: ufw status | grep Status
+            register: "ufw_check"
+
+          - debug: var=ufw_check.stdout_lines
+
+          - name: ==========================Checking open ufw ports==========================
+            shell: "ufw status"
+            register: ufw_ports_allow
+
+          - debug: var=ufw_ports_allow.stdout_lines
+
+          - name: ==========================Check if port is open for SSH==========================
+            shell: "grep Port /etc/ssh/sshd_config | grep -n 1"
+            register: ssh_port
+
+          - debug: var=ssh_port.stdout_lines
+
+          - name: ==========================Checking if public key authorization is allowed==========================
+            shell: "grep PubkeyAuthentication /etc/ssh/sshd_config"
+            register: pubkey_allowed
+
+          - debug: var=pubkey_allowed.stdout_lines
+
+          - name: ==========================Checking if users are created==========================
+            shell: "sed 's/:.*//' /etc/passwd | grep Webdeveloper && sed 's/:.*//' /etc/passwd | grep Devopsengineer && sed 's/:.*//' /etc/passwd | grep Projectmanager"
+            register: check_users_created
+
+          - debug: var=check_users_created.stdout_lines
+
+          - name: ==========================Keys check==========================
+            shell: "cat /home/Webdeveloper/.ssh/authorized_keys && cat /home/Devopsengineer/.ssh/authorized_keys && cat /home/Projectmanager/.ssh/authorized_keys"
+            register: keys_check
+
+          - debug: var=keys_check.stdout_lines
+
+          - name: ==========================Checking that docker-compose is installed using the docker-compose script==========================
+            shell: "whereis docker-compose"
+            register: compose_sh
+
+          - debug: var=compose_sh.stdout_lines
+
+          - name: ==========================Verifying that the skillcloud-nginx directory has been created==========================
+            stat:
+                    path: /skillcloud-nginx
+            register: skillcloud_directory
+
+          - debug:
+                  msg: "SUCCESS"
+            when: skillcloud_directory.stat.exists
+
+          - debug:
+                  msg: "NO SUCCESS"
+            when: skillcloud_directory.stat.exists == False
+
+          - name: ==========================Checking if files were copied to virtual machines==========================
+            shell: "ls /skillcloud-nginx"
+            register: copy_files_skillcloud_nginx
+
+          - debug: var=copy_files_skillcloud_nginx.stdout_lines
+
+          - name: ==========================Checking if SSH daemon has been restarted==========================
+            shell: "systemctl show sshd | grep ExecMainStartTimestamp="
+            register: sshd_time_restarted
+
+          - debug: var=sshd_time_restarted.stdout_lines
+
+          - name: ==========================Checking if SSH daemon has been restarted==========================
+            shell: "systemctl show ufw | grep ExecMainStartTimestamp="
+            register: ufw_time_restarted
+
+          - debug: var=ufw_time_restarted.stdout_lines
+
+          - name: ==========================Checking restarted VM==========================
+            shell: "uptime -s"
+            register: restarted_vm
+
+          - debug: var=restarted_vm.stdout_lines
+
+
+Вывод:
+
+PLAY [Expert cheking git-repository] ********************************************************************************************************************************************************************************************
+
+TASK [==========================Checking that the Git repository is cloned==========================] ***************************************************************************************************************************
+ok: [localhost]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "SUCCESS"
+}
+
+TASK [==========================Connection VM==========================] ********************************************************************************************************************************************************
+changed: [localhost]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [localhost] => {
+    "conn_vm.stdout_lines": [
+        "project_2 | SUCCESS => {",
+        "    \"ansible_facts\": {",
+        "        \"discovered_interpreter_python\": \"/usr/bin/python3\"",
+        "    },",
+        "    \"changed\": false,",
+        "    \"ping\": \"pong\"",
+        "}",
+        "project_1 | SUCCESS => {",
+        "    \"ansible_facts\": {",
+        "        \"discovered_interpreter_python\": \"/usr/bin/python3\"",
+        "    },",
+        "    \"changed\": false,",
+        "    \"ping\": \"pong\"",
+        "}",
+        "project_3 | SUCCESS => {",
+        "    \"ansible_facts\": {",
+        "        \"discovered_interpreter_python\": \"/usr/bin/python3\"",
+        "    },",
+        "    \"changed\": false,",
+        "    \"ping\": \"pong\"",
+        "}"
+    ]
+}
+
+PLAY [Expert Ansible tasks] *****************************************************************************************************************************************************************************************************
+
+TASK [==========================Checking that the curl package is installed==========================] **************************************************************************************************************************
+ok: [project_2]
+ok: [project_3]
+ok: [project_1]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "msg": "SUCCESS"
+}
+ok: [project_2] => {
+    "msg": "SUCCESS"
+}
+ok: [project_3] => {
+    "msg": "SUCCESS"
+}
+
+TASK [==========================Checking that the docker package is installed==========================] ************************************************************************************************************************
+ok: [project_1]
+ok: [project_2]
+ok: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "msg": "SUCCESS"
+}
+ok: [project_2] => {
+    "msg": "SUCCESS"
+}
+ok: [project_3] => {
+    "msg": "SUCCESS"
+}
+
+TASK [==========================Checking that ufw is activated==========================] ***************************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "ufw_check.stdout_lines": [
+        "Status: active"
+    ]
+}
+ok: [project_2] => {
+    "ufw_check.stdout_lines": [
+        "Status: active"
+    ]
+}
+ok: [project_3] => {
+    "ufw_check.stdout_lines": [
+        "Status: active"
+    ]
+}
+
+TASK [==========================Checking open ufw ports==========================] **********************************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "ufw_ports_allow.stdout_lines": [
+        "Status: active",
+        "",
+        "To                         Action      From",
+        "--                         ------      ----",
+        "80                         ALLOW       Anywhere                  ",
+        "8080                       ALLOW       Anywhere                  ",
+        "1834                       ALLOW       Anywhere                  ",
+        "80 (v6)                    ALLOW       Anywhere (v6)             ",
+        "8080 (v6)                  ALLOW       Anywhere (v6)             ",
+        "1834 (v6)                  ALLOW       Anywhere (v6)             "
+    ]
+}
+ok: [project_2] => {
+    "ufw_ports_allow.stdout_lines": [
+        "Status: active",
+        "",
+        "To                         Action      From",
+        "--                         ------      ----",
+        "80                         ALLOW       Anywhere                  ",
+        "8080                       ALLOW       Anywhere                  ",
+        "1834                       ALLOW       Anywhere                  ",
+        "80 (v6)                    ALLOW       Anywhere (v6)             ",
+        "8080 (v6)                  ALLOW       Anywhere (v6)             ",
+        "1834 (v6)                  ALLOW       Anywhere (v6)             "
+    ]
+}
+ok: [project_3] => {
+    "ufw_ports_allow.stdout_lines": [
+        "Status: active",
+        "",
+        "To                         Action      From",
+        "--                         ------      ----",
+        "80                         ALLOW       Anywhere                  ",
+        "8080                       ALLOW       Anywhere                  ",
+        "1834                       ALLOW       Anywhere                  ",
+        "80 (v6)                    ALLOW       Anywhere (v6)             ",
+        "8080 (v6)                  ALLOW       Anywhere (v6)             ",
+        "1834 (v6)                  ALLOW       Anywhere (v6)             "
+    ]
+}
+
+TASK [==========================Check if port is open for SSH==========================] ****************************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "ssh_port.stdout_lines": [
+        "1:Port 1834"
+    ]
+}
+ok: [project_2] => {
+    "ssh_port.stdout_lines": [
+        "1:Port 1834"
+    ]
+}
+ok: [project_3] => {
+    "ssh_port.stdout_lines": [
+        "1:Port 1834"
+    ]
+}
+
+TASK [==========================Checking if public key authorization is allowed==========================] **********************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "pubkey_allowed.stdout_lines": [
+        "PubkeyAuthentication yes"
+    ]
+}
+ok: [project_2] => {
+    "pubkey_allowed.stdout_lines": [
+        "PubkeyAuthentication yes"
+    ]
+}
+ok: [project_3] => {
+    "pubkey_allowed.stdout_lines": [
+        "PubkeyAuthentication yes"
+    ]
+}
+
+TASK [==========================Checking if users are created==========================] ****************************************************************************************************************************************
+[WARNING]: Consider using the replace, lineinfile or template module rather than running 'sed'.  If you need to use command because replace, lineinfile or template is insufficient you can add 'warn: false' to this command
+task or set 'command_warnings=False' in ansible.cfg to get rid of this message.
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "check_users_created.stdout_lines": [
+        "Webdeveloper",
+        "Devopsengineer",
+        "Projectmanager"
+    ]
+}
+ok: [project_2] => {
+    "check_users_created.stdout_lines": [
+        "Webdeveloper",
+        "Devopsengineer",
+        "Projectmanager"
+    ]
+}
+ok: [project_3] => {
+    "check_users_created.stdout_lines": [
+        "Webdeveloper",
+        "Devopsengineer",
+        "Projectmanager"
+    ]
+}
+
+TASK [==========================Keys check==========================] ***********************************************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "keys_check.stdout_lines": [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM=",
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM=",
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM="
+    ]
+}
+ok: [project_2] => {
+    "keys_check.stdout_lines": [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM=",
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM=",
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM="
+    ]
+}
+ok: [project_3] => {
+    "keys_check.stdout_lines": [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM=",
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM=",
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM="
+    ]
+}
+
+TASK [==========================Checking that docker-compose is installed using the docker-compose script==========================] ********************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "compose_sh.stdout_lines": [
+        "docker-compose: /usr/bin/docker-compose /usr/bin/docker-compose.sh /usr/local/bin/docker-compose /usr/share/man/man1/docker-compose.1.gz"
+    ]
+}
+ok: [project_2] => {
+    "compose_sh.stdout_lines": [
+        "docker-compose: /usr/bin/docker-compose /usr/bin/docker-compose.sh /usr/local/bin/docker-compose /usr/share/man/man1/docker-compose.1.gz"
+    ]
+}
+ok: [project_3] => {
+    "compose_sh.stdout_lines": [
+        "docker-compose: /usr/bin/docker-compose /usr/bin/docker-compose.sh /usr/local/bin/docker-compose /usr/share/man/man1/docker-compose.1.gz"
+    ]
+}
+
+TASK [==========================Verifying that the skillcloud-nginx directory has been created==========================] *******************************************************************************************************
+ok: [project_1]
+ok: [project_2]
+ok: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "msg": "SUCCESS"
+}
+ok: [project_2] => {
+    "msg": "SUCCESS"
+}
+ok: [project_3] => {
+    "msg": "SUCCESS"
+}
+
+TASK [==========================Checking if files were copied to virtual machines==========================] ********************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "copy_files_skillcloud_nginx.stdout_lines": [
+        "Dockerfile-balance",
+        "Dockerfile-site",
+        "docker-compose.yml",
+        "index.html",
+        "nginx.conf"
+    ]
+}
+ok: [project_2] => {
+    "copy_files_skillcloud_nginx.stdout_lines": [
+        "Dockerfile-balance",
+        "Dockerfile-site",
+        "docker-compose.yml",
+        "index.html",
+        "nginx.conf"
+    ]
+}
+ok: [project_3] => {
+    "copy_files_skillcloud_nginx.stdout_lines": [
+        "Dockerfile-balance",
+        "Dockerfile-site",
+        "docker-compose.yml",
+        "index.html",
+        "nginx.conf"
+    ]
+}
+
+TASK [==========================Checking if SSH daemon has been restarted==========================] ****************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "sshd_time_restarted.stdout_lines": [
+        "ExecMainStartTimestamp=Sun 2021-10-17 18:12:10 UTC"
+    ]
+}
+ok: [project_2] => {
+    "sshd_time_restarted.stdout_lines": [
+        "ExecMainStartTimestamp=Sun 2021-10-17 13:24:31 UTC"
+    ]
+}
+ok: [project_3] => {
+    "sshd_time_restarted.stdout_lines": [
+        "ExecMainStartTimestamp=Sun 2021-10-17 13:24:39 UTC"
+    ]
+}
+
+TASK [==========================Checking if SSH daemon has been restarted==========================] ****************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "ufw_time_restarted.stdout_lines": [
+        "ExecMainStartTimestamp=Sun 2021-10-17 13:24:24 UTC"
+    ]
+}
+ok: [project_2] => {
+    "ufw_time_restarted.stdout_lines": [
+        "ExecMainStartTimestamp=Sun 2021-10-17 13:24:23 UTC"
+    ]
+}
+ok: [project_3] => {
+    "ufw_time_restarted.stdout_lines": [
+        "ExecMainStartTimestamp=Sun 2021-10-17 13:24:30 UTC"
+    ]
+}
+
+TASK [==========================Checking restarted VM==========================] ************************************************************************************************************************************************
+changed: [project_1]
+changed: [project_2]
+changed: [project_3]
+
+TASK [debug] ********************************************************************************************************************************************************************************************************************
+ok: [project_1] => {
+    "restarted_vm.stdout_lines": [
+        "2021-10-17 13:24:23"
+    ]
+}
+ok: [project_2] => {
+    "restarted_vm.stdout_lines": [
+        "2021-10-17 13:24:20"
+    ]
+}
+ok: [project_3] => {
+    "restarted_vm.stdout_lines": [
+        "2021-10-17 13:24:28"
+    ]
+}
+
+PLAY RECAP **********************************************************************************************************************************************************************************************************************
+localhost                  : ok=4    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+project_1                  : ok=28   changed=11   unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
+project_2                  : ok=28   changed=11   unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
+project_3                  : ok=28   changed=11   unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
